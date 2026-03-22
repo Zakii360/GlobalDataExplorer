@@ -5,38 +5,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Global Data Explorer</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
+        * {
             margin: 0;
             padding: 0;
-            background-color: #f0f0f0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: #fff;
+            width: 100%;
+            max-width: 1200px;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
         }
 
         h1 {
-            margin-top: 20px;
+            margin-bottom: 20px;
+            font-size: 2rem;
+            color: #333;
         }
 
-        #dataContainer {
-            margin-top: 20px;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        #dataContainer div {
-            background-color: white;
-            margin: 10px;
-            padding: 10px;
-            border: 1px solid #ddd;
-            width: 250px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        label, button {
+            font-size: 1rem;
+            margin-right: 10px;
         }
 
         input, select, button {
-            margin: 10px;
-            padding: 8px;
-            font-size: 14px;
+            padding: 10px;
+            font-size: 1rem;
+            margin-top: 10px;
             border-radius: 5px;
             border: 1px solid #ddd;
         }
@@ -51,40 +60,99 @@
             background-color: #45a049;
         }
 
-        .news-container, .common-names {
+        .filters {
+            margin-bottom: 20px;
+        }
+
+        .country-cards {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
             margin-top: 20px;
         }
 
-        .news-container, .common-names {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+        .country-card {
+            background-color: #fafafa;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            margin: 15px;
+            padding: 20px;
+            width: 280px;
+            text-align: left;
+            box-sizing: border-box;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .country-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .country-card img {
+            width: 60px;
+            height: auto;
+            border-radius: 50%;
+            margin-bottom: 10px;
+        }
+
+        .news-container {
+            margin-top: 40px;
+            text-align: left;
+        }
+
+        .news-container h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .news-container a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .news-container a:hover {
+            text-decoration: underline;
+        }
+
+        .common-names-container {
+            margin-top: 40px;
+        }
+
+        .common-names-container h3 {
+            margin-bottom: 15px;
+        }
+
+        .common-names-container div {
+            margin: 5px;
+            font-size: 1.1rem;
+            color: #333;
         }
     </style>
 </head>
 <body>
 
-    <h1>Global Data Explorer</h1>
+    <div class="container">
+        <h1>Global Data Explorer</h1>
 
-    <label>Sort by:
-        <select id="sortField">
-            <option value="name">Name</option>
-            <option value="population">Population</option>
-            <option value="area">Area</option>
-            <option value="region">Region</option>
-        </select>
-    </label>
+        <div class="filters">
+            <label for="sortField">Sort by:</label>
+            <select id="sortField">
+                <option value="name">Name</option>
+                <option value="population">Population</option>
+                <option value="area">Area</option>
+                <option value="region">Region</option>
+            </select>
 
-    <label>Filter by keyword:
-        <input type="text" id="filterKeyword" placeholder="Type country or region">
-    </label>
+            <label for="filterKeyword">Filter by keyword:</label>
+            <input type="text" id="filterKeyword" placeholder="Search for a country">
 
-    <button id="loadBtn">Load Countries</button>
+            <button id="loadBtn">Load Countries</button>
+        </div>
 
-    <div id="dataContainer"></div>
-
-    <div id="newsContainer" class="news-container"></div>
-    <div id="commonNamesContainer" class="common-names"></div>
+        <div id="dataContainer" class="country-cards"></div>
+        
+        <div id="newsContainer" class="news-container"></div>
+        <div id="commonNamesContainer" class="common-names-container"></div>
+    </div>
 
     <script>
         document.getElementById("loadBtn").addEventListener("click", loadCountries);
@@ -115,17 +183,20 @@
                 container.innerHTML = "";
                 data.forEach(country => {
                     const div = document.createElement("div");
+                    div.classList.add("country-card");
                     div.innerHTML = `
+                        <img src="${country.flags.png}" alt="Flag">
                         <strong>${country.name.common}</strong><br>
                         Population: ${country.population}<br>
                         Area: ${country.area || "N/A"} km²<br>
-                        Region: ${country.region}<br>
-                        <img src="${country.flags.png}" alt="Flag" width="50px"><br>
+                        Region: ${country.region}
                     `;
                     container.appendChild(div);
                 });
 
                 fetchNews('global');
+                fetchCommonNames();
+
             } catch (error) {
                 console.error("Error fetching data:", error);
             }
@@ -165,17 +236,6 @@
                 commonNamesContainer.appendChild(nameDiv);
             });
         }
-
-        function fetchNumberFacts() {
-            const factsContainer = document.getElementById("numberFactsContainer");
-            factsContainer.innerHTML = "<h3>Interesting Facts about Numbers:</h3>";
-            factsContainer.innerHTML += `
-                <p>The population of China is approximately 1.4 billion.</p>
-                <p>The area of Russia is about 17.1 million square kilometers.</p>
-                <p>There are 195 countries in the world today.</p>
-            `;
-        }
-
     </script>
 
 </body>
